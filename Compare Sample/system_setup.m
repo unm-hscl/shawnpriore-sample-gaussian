@@ -35,7 +35,7 @@ end
 for i = 0:(time_horizon-1)
     for j = 0:i
         Bd_concat(size(Bd, 1)*i + [1:size(Bd, 1)], size(Bd, 2)*j + [1:size(Bd, 2)]) = Ad^(i-j) * Bd;
-        Cd_concat(size(Bd, 1)*i + [1:size(Bd, 1)], (2*size(Bd, 2))*j + [1:(2*size(Bd, 2))]) = Ad^(i-j) * blkdiag(Bd(1:3,:), Bd(4:6,:));
+        Cd_concat(size(Ad, 1)*i + [1:size(Ad, 1)], size(Ad, 2)*j + [1:size(Ad, 2)]) = Ad^(i-j);
     end
 end
 
@@ -43,6 +43,7 @@ end
 % initial state
 % format: x, y, z,  x., y., z.
 x_0 = [11;  -4;  6; 0; 0; 0] ; % satellite A
+x_mean_no_input = Ad_concat * x_0;
 
 % target set
 % format: x, y, z, x., y., z.
@@ -54,7 +55,7 @@ G_k = [-1,  0,  2, 0, 0, 0;
 h_k  = [0;0;0;0;10];
 
 G_N = kron(eye(6), [1;-1]);
-h_N = [2; 0; ones(4,1); 0.1 * ones(6,1)];
+h_N = [2; 0; ones(4,1); 0.2 * ones(6,1)];
 
 G = blkdiag( kron(eye(time_horizon-1), G_k), G_N);
 h = [kron(ones(time_horizon-1,1),h_k); h_N];
@@ -63,13 +64,14 @@ h = [kron(ones(time_horizon-1,1),h_k); h_N];
 n_lin_state = size(G,1);
 
 % Input space
-u_max = 0.1;
+u_max = 1;
 input_space_A = kron(eye(time_horizon), [eye(3); -eye(3)]);
 input_space_b = u_max * ones(time_horizon*6,1);
 
 % safety threshold
-safety_target         = 0.15;  % in target set
+safety_target         = 0.05;  % in target set
 
 % disturbance param
 G_mean = zeros(1,size(Cd_concat, 2));
 G_cov = kron(eye(time_horizon), [1e-6 * eye(3), zeros(3); zeros(3), 5e-8 * eye(3)]);
+
